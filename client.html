@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <div id="messages"></div>
+    <script>
+        const socket = new WebSocket('ws://127.0.0.1:8080');
+
+        const messagesDiv = document.getElementById('messages');
+
+        function addMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+        }
+
+        socket.onopen = () => {
+            addMessage('Connected to the server');
+            socket.send('Hello Server!');
+        };
+
+        socket.onmessage = (event) => {
+            addMessage('Message from server: ' + event.data);
+        };
+
+        socket.onclose = () => {
+            addMessage('Disconnected from the server');
+        };
+
+        socket.onerror = (error) => {
+            addMessage('WebSocket error: ' + error);
+        };
+    </script>
+</body>
+</html>
