@@ -11,7 +11,7 @@ function tokenBucket(ip) {
     bucket.tokens = Math.min(10, bucket.tokens + timePassed);
     bucket.lastRefill = now;
 
-    console.log(`IP: ${ip}, Tokens: ${bucket.tokens}`); // Log para depuração
+    console.log(`IP: ${ip}, Tokens: ${bucket.tokens}`);
 
     if (bucket.tokens >= 1) {
         bucket.tokens -= 1;

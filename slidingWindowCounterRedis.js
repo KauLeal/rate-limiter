@@ -1,30 +1,46 @@
 const redis = require('redis');
-const client = redis.createClient();
+const moment = require('moment');
 
-function slidingWindowCounter(ip) {
-    const now = Date.now();
-    const windowSize = 60000; // 1 minuto em milissegundos
-    const limit = 5; // Limite de 5 requisições por minuto
-    const currentWindow = Math.floor(now / windowSize) * windowSize;
+// Crie o cliente Redis
+const client = redis.createClient({
+  url: 'redis://localhost:6379'
+});
 
-    return new Promise((resolve, reject) => {
-        client.multi()
-            .zremrangebyscore(ip, 0, currentWindow - windowSize) // Remover entradas antigas
-            .zadd(ip, now, now) // Adicionar a nova entrada
-            .zrange(ip, 0, -1) // Obter todas as entradas
-            .exec((err, replies) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const requestCounts = replies[2].length;
-                    if (requestCounts <= limit) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                }
-            });
+client.on('error', (err) => console.log('Redis Client Error', err));
+
+// Conecte ao cliente Redis
+client.connect();
+
+const WINDOW_SIZE_IN_SECONDS = 60;
+const MAX_REQUESTS = 60;
+
+const rateLimiter = async (req, res, next) => {
+  const ip = req.ip;
+  const currentTimestamp = moment().unix().toString();
+
+  try {
+    // Obtenha os timestamps das requisições do Redis
+    const timestamps = await client.lRange(ip, 0, -1);
+
+    const requestsInWindow = timestamps.filter(timestamp => {
+      return currentTimestamp - timestamp < WINDOW_SIZE_IN_SECONDS;
     });
-}
 
-module.exports = slidingWindowCounter;
+    if (requestsInWindow.length >= MAX_REQUESTS) {
+      return res.status(429).send('Too Many Requests');
+    }
+
+    // Converta timestamps para strings antes de enviá-los ao Redis
+    await client.multi()
+      .rPush(ip, currentTimestamp)
+      .expire(ip, WINDOW_SIZE_IN_SECONDS)
+      .exec();
+
+    next();
+  } catch (err) {
+    console.error('Redis error:', err);
+    return res.status(500).send('Internal Server Error');
+  }
+};
+
+module.exports = rateLimiter;

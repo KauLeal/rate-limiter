@@ -1,8 +1,47 @@
+== tockenBucket.js ==
+Requisições pro app.js:
+
 for /L %i in (1,1,15) do curl http://127.0.0.1:8080/bucketLimited
 
+Resultado esperado: 10 requisições passam e 5 não passam.
+
+
+
+== fixedWindowCounter.js ==
+Requisições pro app.js:
 
 for /L %i in (1,1,70) do curl http://127.0.0.1:8080/windowLimited
 
+Resultado esperado: 60 requisições passam e 10 não passam.
+
+
+
+== slidingWindowLog.js ==
+Requisições pro app.js:
+
 for /L %i in (1,1,7) do curl -s -o nul -w "%{http_code}\n" http://127.0.0.1:8080/slidingWindowLimited
 
+Resultado esperado: 5 requisições passam e 2 não passam.
+
+
+
+== slidingWindowCounter.js ==
+Requisições pro app.js:
+
 for /L %i in (1,1,7) do curl -s -o nul -w "%{http_code}\n" http://127.0.0.1:8080/slidingWindowCounterLimited
+
+Resultado esperado: 5 requisições passam e 2 não passam.
+
+
+== slidingWindowCounterRedis.js ==
+Requisições pro server1.js:
+
+for ($i=1; $i -le 60; $i++) {
+    Invoke-WebRequest -Uri http://localhost:3001/ -UseBasicParsing
+}
+
+Requisições pro server1.js:
+
+Invoke-WebRequest -Uri http://localhost:3002/ -UseBasicParsing
+
+Resultado esperado: todas as requisições do server 1 passam, mas a requisição do server 2 não passa.

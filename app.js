@@ -4,10 +4,8 @@ const WebSocket = require('ws');
 const tokenBucket = require('./tokenBucket');
 const fixedWindowCounter = require('./fixedWindowCounter');
 const slidingWindowLog = require('./slidingWindowLog');
-const slidingWindowCounter = require('./slidingWindowCounter');
+//const slidingWindowCounter = require('./slidingWindowCounter');
 const slidingWindowCounterRedis = require('./slidingWindowCounterRedis');
-
-
 
 const app = express();
 const server = http.createServer(app);
@@ -17,16 +15,16 @@ const port = 8080;
 
 // Configuração dos middlewares para endpoints HTTP
 app.get('/unlimited', (req, res) => {
-    res.send("Unlimited! Let's Go!");
+    res.send("Ilimitado!");
 });
 
 app.get('/bucketLimited', (req, res) => {
     const ip = req.ip || req.connection.remoteAddress;
     console.log(`IP: ${ip} - Request to /bucketLimited`);
     if (tokenBucket(ip)) {
-        res.send("Limited by Token Bucket");
+        res.send("Limitado pelo Token Bucket!");
     } else {
-        res.status(429).send("429 Too Many Requests");
+        res.status(429).send("Error 429: Too Many Requests");
     }
 });
 
@@ -34,75 +32,53 @@ app.get('/windowLimited', (req, res) => {
     const ip = req.ip || req.connection.remoteAddress;
     console.log(`IP: ${ip} - Request to /windowLimited`);
     if (fixedWindowCounter(ip)) {
-        res.send("Limited by Fixed Window Counter");
+        res.send("Limitado pelo Fixed Window Counter!");
     } else {
-        res.status(429).send("429 Too Many Requests");
+        res.status(429).send("Error 429: Too Many Requests");
     }
 });
 
 app.get('/slidingWindowLimited', (req, res) => {
     const ip = req.ip || req.connection.remoteAddress;
     if (slidingWindowLog(ip)) {
-        res.send("Limited by Sliding Window Log");
+        res.send("Limitado pelo Sliding Window Log!");
     } else {
-        res.status(429).send("429 Too Many Requests - Sliding Window Log");
+        res.status(429).send("Error 429: Too Many Requests");
     }
 });
 
-app.get('/slidingWindowCounterLimited', (req, res) => {
+/*
+app.get('/slidingWindowCounterLimited', async (req, res) => {
     const ip = req.ip || req.connection.remoteAddress;
-    if (slidingWindowCounter(ip)) {
-        res.send("Limited by Sliding Window Counter");
-    } else {
-        res.status(429).send("429 Too Many Requests - Sliding Window Counter");
+    try {
+        const allowed = await slidingWindowCounterRedis(ip);
+        if (allowed) {
+            res.send("Limitado pelo Sliding Window Counter Redis");
+        } else {
+            res.status(429).send("Error 429: Too Many Requests");
+        }
+    } catch (error) {
+        res.status(500).send("Internal Server Error");
     }
 });
-
-// Middleware de Token Bucket para WebSocket
-const tokenBucketWS = (ws, req, next) => {
-    const ip = req.socket.remoteAddress;
-    if (tokenBucket(ip)) {
-        next();
-    } else {
-        ws.send('429 Too Many Requests - Token Bucket');
-        ws.close();
-    }
-};
-
-// Middleware de Fixed Window Counter para WebSocket
-const fixedWindowCounterWS = (ws, req, next) => {
-    const ip = req.socket.remoteAddress;
-    if (fixedWindowCounter(ip)) {
-        next();
-    } else {
-        ws.send('429 Too Many Requests - Fixed Window Counter');
-        ws.close();
-    }
-};
-
-// Middleware de Sliding Window Log para WebSocket
-const slidingWindowLogWS = (ws, req, next) => {
-    const ip = req.socket.remoteAddress;
-    if (slidingWindowLog(ip)) {
-        next();
-    } else {
-        ws.send('429 Too Many Requests - Sliding Window Log');
-        ws.close();
-    }
-};
+*/
 
 // Middleware de Sliding Window Counter para WebSocket
-const slidingWindowCounterWS = (ws, req, next) => {
+const slidingWindowCounterRedisWS = async (ws, req, next) => {
     const ip = req.socket.remoteAddress;
-    if (slidingWindowCounter(ip)) {
-        next();
-    } else {
-        ws.send('429 Too Many Requests - Sliding Window Counter');
+    try {
+        const allowed = await slidingWindowCounterRedis(ip);
+        if (allowed) {
+            next();
+        } else {
+            ws.send('Error 429: Too Many Requests');
+            ws.close();
+        }
+    } catch (error) {
+        ws.send('500 Internal Server Error');
         ws.close();
     }
 };
-
-
 
 // Configuração do WebSocket
 wss.on('connection', (ws, req) => {
@@ -112,7 +88,7 @@ wss.on('connection', (ws, req) => {
     tokenBucketWS(ws, req, () => {
         fixedWindowCounterWS(ws, req, () => {
             slidingWindowLogWS(ws, req, () => {
-                slidingWindowCounterWS(ws, req, () => {
+                slidingWindowCounterRedisWS(ws, req, () => {
                     ws.on('message', (message) => {
                         console.log('Received:', message);
                         ws.send(`Server received: ${message}`);
