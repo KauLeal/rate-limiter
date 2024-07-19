@@ -10,7 +10,6 @@ function slidingWindowLog(ip) {
         logs[ip] = [];
     }
 
-    // Limpar logs antigos
     logs[ip] = logs[ip].filter(timestamp => now - timestamp < windowSize);
 
     if (logs[ip].length < limit) {

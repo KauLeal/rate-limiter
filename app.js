@@ -13,7 +13,6 @@ const wss = new WebSocket.Server({ server });
 
 const port = 8080;
 
-// Configuração dos middlewares para endpoints HTTP
 app.get('/unlimited', (req, res) => {
     res.send("Ilimitado!");
 });
@@ -63,7 +62,6 @@ app.get('/slidingWindowCounterLimited', async (req, res) => {
 });
 */
 
-// Middleware de Sliding Window Counter para WebSocket
 const slidingWindowCounterRedisWS = async (ws, req, next) => {
     const ip = req.socket.remoteAddress;
     try {
@@ -80,11 +78,9 @@ const slidingWindowCounterRedisWS = async (ws, req, next) => {
     }
 };
 
-// Configuração do WebSocket
 wss.on('connection', (ws, req) => {
     console.log('Client connected');
 
-    // Use middlewares
     tokenBucketWS(ws, req, () => {
         fixedWindowCounterWS(ws, req, () => {
             slidingWindowLogWS(ws, req, () => {

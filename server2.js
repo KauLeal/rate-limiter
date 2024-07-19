@@ -7,9 +7,9 @@ const port = 3002;
 app.use(slidingWindowCounterRedis);
 
 app.get('/', (req, res) => {
-  res.send('Hello from Server 2');
+  res.send('Servidor 2 funcionando!');
 });
 
 app.listen(port, () => {
-  console.log(`Server 2 listening at http://localhost:${port}`);
+  console.log(`Servidor 2 ouvindo em http://localhost:${port}`);
 });
