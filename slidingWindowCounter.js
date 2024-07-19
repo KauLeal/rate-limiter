@@ -1,9 +1,8 @@
-// slidingWindowCounter.js
 const counters = {};
 
 function slidingWindowCounter(ip) {
     const now = Date.now();
-    const windowSize = 5000; // 1 minuto em milissegundos
+    const windowSize = 5000; // 5 segundos em milissegundos
     const limit = 5; // Limite de 5 requisições por minuto
 
     if (!counters[ip]) {
@@ -17,7 +16,6 @@ function slidingWindowCounter(ip) {
 
     const currentWindow = Math.floor(now / windowSize) * windowSize;
 
-    // Atualiza os contadores conforme a janela atual muda
     if (counters[ip].currentWindow === currentWindow) {
         counters[ip].currentCount++;
     } else {

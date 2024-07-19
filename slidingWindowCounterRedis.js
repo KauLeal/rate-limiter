@@ -1,14 +1,13 @@
 const redis = require('redis');
 const moment = require('moment');
 
-// Crie o cliente Redis
+//Cliente Redis
 const client = redis.createClient({
   url: 'redis://localhost:6379'
 });
 
 client.on('error', (err) => console.log('Redis Client Error', err));
 
-// Conecte ao cliente Redis
 client.connect();
 
 const WINDOW_SIZE_IN_SECONDS = 60;
@@ -19,7 +18,6 @@ const rateLimiter = async (req, res, next) => {
   const currentTimestamp = moment().unix().toString();
 
   try {
-    // Obtenha os timestamps das requisições do Redis
     const timestamps = await client.lRange(ip, 0, -1);
 
     const requestsInWindow = timestamps.filter(timestamp => {
@@ -27,10 +25,9 @@ const rateLimiter = async (req, res, next) => {
     });
 
     if (requestsInWindow.length >= MAX_REQUESTS) {
-      return res.status(429).send('Too Many Requests');
+      return res.status(429).send('Error 429: Too Many Requests');
     }
 
-    // Converta timestamps para strings antes de enviá-los ao Redis
     await client.multi()
       .rPush(ip, currentTimestamp)
       .expire(ip, WINDOW_SIZE_IN_SECONDS)
