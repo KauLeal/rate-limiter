@@ -114,6 +114,12 @@ Requisições pro server1.js no Linux
 
 Resultado esperado: todas as requisições do server 2 passam, mas a requisição do server 1 não passa.
 
+## Anexos:
+
+Apresentação da Ana Larissa sobre tokenBucket.js:
+
+    https://drive.google.com/file/d/1G--w4F5Xz1Q5L-NxBvtjzSrQ3VuR9Jvs/view?usp=drive_link
+
 ## Integrantes
 
 > Os seguintes alunos contribuíram para o projeto:
